@@ -10,6 +10,7 @@ Local vehicle-rental system for one city. Learning project. The person running t
 - User: the person running the app. A public rider on the web or a phone is a later client of the same rules, not a v1 user.
 - Success: the system holds the network and a full rental. The seed is 5 stations on real places in Tandil and 50 vehicles. The map shows the stations, and a click shows how many vehicles of each type are available there.
 - Constraint: one city, one local user, no login. The rules must still hold when a public client arrives.
+- Constraint: The system builds and runs on Windows, Linux, and macOS.
 
 ## Out of scope
 
