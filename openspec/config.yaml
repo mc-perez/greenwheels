@@ -10,7 +10,7 @@ context: |
   Stack (decided):
   - Python backend with FastAPI, Pydantic v2, and auto-generated OpenAPI docs
   - React frontend
-  - PostgreSQL database / Capra persistence layer with SQLModel
+  - PostgreSQL database with SQLModel; Alembic for schema migrations (revisions in repo, `upgrade head` before or when the API starts in Docker)
   - Pydantic for input and output models.
   - Follow the official FastAPI and Pydantic skills that are installed.
   - Follow the official Docker skills that are installed.

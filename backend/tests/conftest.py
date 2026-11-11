@@ -10,10 +10,12 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from app.db import get_session
+from app.migrate import upgrade_head
 from app.main import app, set_fleet_usage_port_for_tests
 from app.models.vehicle_type import VehicleType  # noqa: F401 — register metadata
 from app.ports.fleet_usage import FleetUsagePort, StubFleetUsage
@@ -35,11 +37,15 @@ def engine():
 
     eng = create_engine(database_url)
     SQLModel.metadata.drop_all(eng)
-    SQLModel.metadata.create_all(eng)
+    with eng.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
+    upgrade_head(database_url)
     try:
         yield eng
     finally:
         SQLModel.metadata.drop_all(eng)
+        with eng.begin() as conn:
+            conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
         eng.dispose()
 
 

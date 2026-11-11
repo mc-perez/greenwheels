@@ -18,6 +18,7 @@ services:
   api:
     build:
       context: ./backend
+    image: greenwheels-api
     ports:
       - "8000:8000"
     environment:
@@ -27,14 +28,13 @@ services:
         condition: service_healthy
 
   test:
-    build:
-      context: ./backend
+    image: greenwheels-api
     environment:
       DATABASE_URL: postgresql+psycopg://greenwheels:greenwheels@db:5432/greenwheels
     depends_on:
       db:
         condition: service_healthy
-    command: ["pytest", "-q"]
+    command: ["sh", "-c", "python -m alembic upgrade head && pytest -q"]
     profiles:
       - test
 

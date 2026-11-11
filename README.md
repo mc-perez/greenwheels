@@ -2,7 +2,7 @@
 
 Local vehicle-rental system for one city (learning project). See [requirements.md](requirements.md) for product scope.
 
-**Stack:** Python (FastAPI, SQLModel), PostgreSQL, Docker. OpenSpec specs live under `openspec/`.
+**Stack:** Python (FastAPI, SQLModel), PostgreSQL, Alembic, Docker. OpenSpec specs live under `openspec/`.
 
 ## Prerequisites
 
@@ -13,8 +13,8 @@ Local vehicle-rental system for one city (learning project). See [requirements.m
 From the repository root:
 
 ```bash
-# Build images
-docker compose build
+# Build API image (shared by api and test services)
+docker compose build api
 
 # Start database and API
 docker compose up -d
@@ -34,6 +34,27 @@ docker compose down
 | PostgreSQL (from the host) | `localhost:5433` (user `greenwheels`, password `greenwheels`, db `greenwheels`) |
 
 Containers talk to Postgres on `db:5432` inside the Compose network; only the host mapping uses **5433** to avoid clashing with a local PostgreSQL on 5432.
+
+The `api` container runs **`alembic upgrade head`** before starting Uvicorn. The `test` profile does the same before pytest.
+
+### Database migrations
+
+From `backend/` (or inside the `api` container at `/app`):
+
+```bash
+# Apply all revisions
+alembic upgrade head
+
+# New revision after model changes (review autogenerate output)
+alembic revision --autogenerate -m "describe change"
+```
+
+If you previously used `create_all` only and migrations fail on an old volume, reset dev data:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
 
 ## API (current slice)
 
@@ -73,7 +94,9 @@ DATABASE_URL=postgresql+psycopg://greenwheels:greenwheels@localhost:5433/greenwh
 ```
 
 ```bash
-uvicorn app.main:app --reload --app-dir backend
+cd backend
+alembic upgrade head
+uvicorn app.main:app --reload
 ```
 
 ## OpenSpec workflows

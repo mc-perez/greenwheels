@@ -11,6 +11,7 @@ Local vehicle-rental system for one city. Learning project. The person running t
 - Success: the system holds the network and a full rental. The seed is 5 stations on real places in Tandil and 50 vehicles. The map shows the stations, and a click shows how many vehicles of each type are available there.
 - Constraint: one city, one local user, no login. The rules must still hold when a public client arrives.
 - Constraint: The system builds and runs on Windows, Linux, and macOS.
+- Constraint: The PostgreSQL schema is versioned and applied with Alembic migrations. Runtime does not create or alter production tables with ad-hoc `create_all` when serving the API in Docker.
 
 ## Out of scope
 

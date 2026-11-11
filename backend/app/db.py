@@ -20,9 +20,10 @@ engine = _create_engine(settings.database_url)
 
 
 def init_db() -> None:
-    from app import models  # noqa: F401 — register SQLModel tables before create_all
+    if settings.database_url.startswith("sqlite"):
+        from app import models  # noqa: F401 — register SQLModel tables before create_all
 
-    SQLModel.metadata.create_all(engine)
+        SQLModel.metadata.create_all(engine)
 
 
 def get_session() -> Generator[Session, None, None]:
