@@ -1,32 +1,53 @@
 schema: spec-driven
 
-# Project context (optional)
-# Add only constraints that should guide OpenSpec artifacts and workflows.
-# Include constraints an agent cannot infer by reading the code.
-# Keep general project documentation and discoverable codebase facts out.
-# Example:
-#   context: |
-#     Designs and tasks must cover Windows, macOS, and Linux
-#     Write all artifacts in Spanish
+context: |
+  GreenWheels: A project to rent personal mobility vehicles (traditional bicycles and small electric vehicles 
+               such as bicycles, scooters, and motorcycles). Use of the system is limited to a single city, 
+               where there will be various stations where users can rent a vehicle and take it with them, 
+               and then return it at any other station.
+  New project: no code yet; the living specs come to life as I document them...
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Stack (decided):
+  - Python backend with FastAPI, Pydantic v2, and auto-generated OpenAPI docs
+  - React frontend
+  - PostgreSQL database / Capra persistence layer with SQLModel
+  - Pydantic for input and output models.
+  - Follow the official FastAPI and Pydantic skills that are installed.
+  - Follow the official Docker skills that are installed.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Constraints not arising from the code:
+  - Write all artifacts in English.
+  - Test-first with pytest; no user story is considered complete until its tests pass.
+  - Simplicity: minimal dependencies, no real authentication, no external infrastructure.
+  - Payments is a simulated external service behind a wrapper; do not integrate a payment gateway
+  - Outside the Core: refunds, high-demand queues, recommendations, complaints, and reviews
+  - The “Pending Decisions” in requirements.md are NOT requirements:
+    do not set currency, time zone, state names, or payment contract
+    without an explicit decision.
+  - CORS enabled for the local frontend.
+  - All components must run locally and in Docker containers
+
+rules:
+  proposal:
+    - List the functional requirements (RF) from requirements.md that the change addresses
+    - Include an explicit “Out of Scope” section
+    - One change per slice; if it affects more than three FRs, propose splitting it
+  specs:
+    - One scenario for each EARS criterion of the FR, with WHEN/THEN and specific data
+    - Use “SHALL” in each requirement and the terms from GLOSSARY.md
+    - Any criterion not covered by the change is listed as out of scope
+  design:
+    - Pending decisions are listed as open questions, never as requirements
+  tasks:
+    - The test for each Scenario comes before its implementation
+    - Small tasks, one hour or less, grouped by capability
+
+operations:
+  apply:
+    guidance:
+      - Run pytest after each task and mark it as complete only if the suite passes
+      - If a task reveals something not covered by the spec, stop and update the artifact
+  archive:
+    guidance:
+      - Archive only if the suite passes
+      - Summarize which active specs have changed
