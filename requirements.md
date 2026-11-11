@@ -1,0 +1,27 @@
+# Requirements
+
+Constitution for the first OpenSpec changes. One capability, one change, in the order below. The WHEN/THEN detail is written in that change's delta spec, not here.
+
+Local vehicle-rental system for one city. Learning project. The person running the app is the only user.
+
+## Intent
+
+- Outcome: one operator's data for Tandil — stations, vehicle types, vehicles, and rentals. The first screen is an OpenStreetMap of the city. No key, no account.
+- User: the person running the app. A public rider on the web or a phone is a later client of the same rules, not a v1 user.
+- Success: the system holds the network and a full rental. The seed is 5 stations on real places in Tandil and 50 vehicles. The map shows the stations, and a click shows how many vehicles of each type are available there.
+- Constraint: one city, one local user, no login. The rules must still hold when a public client arrives.
+
+## Out of scope
+
+Authentication, a public client, card charging, GPS tracking, dock hardware, a capacity that blocks a return, any screen other than the map, and Google Maps.
+
+Backend, database, and frontend are how a capability is built. They are not capabilities, and they are not decided here.
+
+## Capabilities
+
+1. **Vehicle types.** An operator catalog: add and rename. Delete is refused while a vehicle uses the type. Each type has a rate, and a rate change applies to future checkouts only.
+2. **Stations.** A station has a name, a capacity, and a location on a real place in Tandil. Capacity is a fact, not a gate.
+3. **Fleet.** A vehicle has one type. It is parked at a station, or out on a rental. Available means parked.
+4. **Rental.** Checkout is legal when the vehicle is parked and has no open rental, and it copies the type's current rate. Return is to any station, including a full one. The amount owed is the copied rate times how long the vehicle was out. The operator records that it was paid. No card charge, and no screen yet.
+5. **Seed.** Five stations taken from real places in Tandil, not invented coordinates. Fifty vehicles, each with a random type and a random station. A few are out on an open rental, with a random station and start time, so the available count is not the whole fleet.
+6. **Station map.** OpenStreetMap, no key and no account. It reads stations from the system and draws them. A click shows available counts by type. The station data is the system's.
