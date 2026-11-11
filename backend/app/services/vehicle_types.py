@@ -11,6 +11,10 @@ class VehicleTypeInUseError(Exception):
     pass
 
 
+class VehicleTypeDuplicateNameError(Exception):
+    pass
+
+
 class VehicleTypeService:
     def __init__(
         self,
@@ -21,6 +25,8 @@ class VehicleTypeService:
         self._fleet_usage = fleet_usage
 
     def create(self, name: str, current_rate) -> VehicleType:
+        if self._repo.get_by_name(name) is not None:
+            raise VehicleTypeDuplicateNameError()
         entity = VehicleType(name=name, current_rate=current_rate)
         return self._repo.create(entity)
 
@@ -40,7 +46,10 @@ class VehicleTypeService:
         entity = self._repo.get(type_id)
         if entity is None:
             return None
-        if name is not None:
+        if name is not None and name != entity.name:
+            existing = self._repo.get_by_name(name)
+            if existing is not None and existing.id != entity.id:
+                raise VehicleTypeDuplicateNameError()
             entity.name = name
         if current_rate is not None:
             entity.current_rate = current_rate

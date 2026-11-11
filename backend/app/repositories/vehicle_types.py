@@ -21,6 +21,10 @@ class VehicleTypeRepository:
     def get(self, type_id: UUID) -> VehicleType | None:
         return self._session.get(VehicleType, type_id)
 
+    def get_by_name(self, name: str) -> VehicleType | None:
+        statement = select(VehicleType).where(VehicleType.name == name)
+        return self._session.exec(statement).first()
+
     def save(self, vehicle_type: VehicleType) -> VehicleType:
         self._session.add(vehicle_type)
         self._session.flush()

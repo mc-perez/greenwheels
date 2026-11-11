@@ -7,12 +7,14 @@ from app.api.health import router as health_router
 from app.api.router import api_router
 from app.db import init_db
 from app.ports.fleet_usage import FleetUsagePort
+from app.ports.station_fleet_usage import StationFleetUsagePort
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     app.state.fleet_usage_port = None
+    app.state.station_fleet_usage_port = None
     yield
 
 
@@ -32,3 +34,7 @@ app.include_router(api_router, prefix="/api/v1")
 
 def set_fleet_usage_port_for_tests(port: FleetUsagePort | None) -> None:
     app.state.fleet_usage_port = port
+
+
+def set_station_fleet_usage_port_for_tests(port: StationFleetUsagePort | None) -> None:
+    app.state.station_fleet_usage_port = port

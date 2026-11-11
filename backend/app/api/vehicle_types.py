@@ -9,7 +9,11 @@ from app.schemas.vehicle_type import (
     VehicleTypeRead,
     VehicleTypeUpdate,
 )
-from app.services.vehicle_types import VehicleTypeInUseError, VehicleTypeService
+from app.services.vehicle_types import (
+    VehicleTypeDuplicateNameError,
+    VehicleTypeInUseError,
+    VehicleTypeService,
+)
 
 router = APIRouter(prefix="/vehicle-types", tags=["vehicle-types"])
 
@@ -19,7 +23,13 @@ def create_vehicle_type(
     body: VehicleTypeCreate,
     service: Annotated[VehicleTypeService, Depends(get_vehicle_type_service)],
 ) -> VehicleTypeRead:
-    created = service.create(body.name, body.current_rate)
+    try:
+        created = service.create(body.name, body.current_rate)
+    except VehicleTypeDuplicateNameError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Vehicle type name already exists",
+        ) from None
     return VehicleTypeRead.model_validate(created)
 
 
@@ -53,11 +63,17 @@ def update_vehicle_type(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="At least one of name or current_rate is required",
         )
-    updated = service.update(
-        type_id,
-        name=body.name,
-        current_rate=body.current_rate,
-    )
+    try:
+        updated = service.update(
+            type_id,
+            name=body.name,
+            current_rate=body.current_rate,
+        )
+    except VehicleTypeDuplicateNameError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Vehicle type name already exists",
+        ) from None
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return VehicleTypeRead.model_validate(updated)
