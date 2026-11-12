@@ -173,6 +173,12 @@ def checkout_via_api(client: TestClient, *, vehicle_id: str) -> dict:
     return response.json()
 
 
+def seed_via_api(client: TestClient) -> dict:
+    response = client.post("/api/v1/seed")
+    assert response.status_code == 201
+    return response.json()
+
+
 def return_rental_via_api(
     client: TestClient,
     *,

@@ -77,6 +77,10 @@ Rentals:
 - `POST` → `/api/v1/rentals/{id}/record-payment`
 - `GET` → `/api/v1/rentals`, `/api/v1/rentals/{id}`
 
+Demo network seed (empty database only):
+
+- `POST` → `/api/v1/seed` — creates five Tandil landmark stations, four demo vehicle types, fifty vehicles, and five open rentals. Returns **409** if any station, vehicle type, vehicle, or rental already exists (no reset endpoint).
+
 ## Local tests without Docker (optional)
 
 Uses in-memory SQLite when `DATABASE_URL` is unset.

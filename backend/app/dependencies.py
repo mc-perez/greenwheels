@@ -9,6 +9,7 @@ from app.ports.station_fleet_usage import SqlStationFleetUsage, StationFleetUsag
 from app.services.rentals import RentalService
 from app.services.stations import StationService
 from app.services.vehicle_types import VehicleTypeService
+from app.services.seed import SeedService
 from app.services.vehicles import VehicleService
 
 
@@ -56,3 +57,9 @@ def get_rental_service(
     session: Annotated[Session, Depends(get_session)],
 ) -> RentalService:
     return RentalService(session)
+
+
+def get_seed_service(
+    session: Annotated[Session, Depends(get_session)],
+) -> SeedService:
+    return SeedService(session)
