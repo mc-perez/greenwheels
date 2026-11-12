@@ -2,7 +2,7 @@
 
 Local vehicle-rental system for one city (learning project). See [requirements.md](requirements.md) for product scope.
 
-**Stack:** Python (FastAPI, SQLModel), PostgreSQL, Alembic, Docker. OpenSpec specs live under `openspec/`.
+**Stack:** Python (FastAPI, SQLModel), PostgreSQL, Alembic, React (Vite + Leaflet), Docker. OpenSpec specs live under `openspec/`.
 
 ## Prerequisites
 
@@ -13,10 +13,11 @@ Local vehicle-rental system for one city (learning project). See [requirements.m
 From the repository root:
 
 ```bash
-# Build API image (shared by api and test services)
+# Build images (api is shared by api and test services)
 docker compose build api
+docker compose build frontend
 
-# Start database and API
+# Start database, API, and map UI
 docker compose up -d
 
 # Run tests against PostgreSQL
@@ -28,6 +29,7 @@ docker compose down
 
 | Service | URL / port |
 |---------|----------------|
+| Station map (UI) | http://localhost:5173 |
 | API | http://localhost:8000 |
 | OpenAPI docs | http://localhost:8000/docs |
 | Health | http://localhost:8000/health |
@@ -81,6 +83,24 @@ Demo network seed (empty database only):
 
 - `POST` → `/api/v1/seed` — creates five Tandil landmark stations, four demo vehicle types, fifty vehicles, and five open rentals. Returns **409** if any station, vehicle type, vehicle, or rental already exists (no reset endpoint).
 
+Station map:
+
+- `GET` → `/api/v1/map/stations` — stations with coordinates, capacity, and available counts for every vehicle type (zero when none are parked).
+
+### Map workflow
+
+1. Start stack: `docker compose up -d` (or API + DB only if using the frontend locally).
+2. On an **empty** database, seed once: `POST http://localhost:8000/api/v1/seed` (or use Swagger at `/docs`).
+3. Open **http://localhost:5173** — OpenStreetMap with station markers; click a marker for name, capacity, and per-type availability.
+
+The UI loads `/api/v1/map/stations` **once** on open. Override the API URL with `VITE_API_BASE_URL` (see `frontend/.env.example`). The browser must reach the API on the host (`http://localhost:8000`); Compose sets this for the `frontend` service.
+
+**Manual UI checks (v1):**
+
+- Empty DB: basemap + “No stations exist”, no markers.
+- After seed: five markers, view fits all stations, panel shows capacity and all four types (some counts may be zero).
+- Network tab: exactly one map stations request on reload.
+
 ## Local tests without Docker (optional)
 
 Uses in-memory SQLite when `DATABASE_URL` is unset.
@@ -117,6 +137,17 @@ cd backend
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
+
+### Frontend (optional, without Docker)
+
+```bash
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+Map dev server: http://localhost:5173 (API must be running with CORS for port 5173).
 
 ## OpenSpec workflows
 
