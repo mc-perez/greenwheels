@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.db import get_session
 from app.ports.fleet_usage import FleetUsagePort, SqlFleetUsage
 from app.ports.station_fleet_usage import SqlStationFleetUsage, StationFleetUsagePort
+from app.services.rentals import RentalService
 from app.services.stations import StationService
 from app.services.vehicle_types import VehicleTypeService
 from app.services.vehicles import VehicleService
@@ -49,3 +50,9 @@ def get_vehicle_service(
     session: Annotated[Session, Depends(get_session)],
 ) -> VehicleService:
     return VehicleService(session)
+
+
+def get_rental_service(
+    session: Annotated[Session, Depends(get_session)],
+) -> RentalService:
+    return RentalService(session)

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.dependencies import get_vehicle_service
 from app.schemas.vehicle import VehicleCreate, VehicleRead, VehicleUpdate
 from app.services.vehicles import (
+    VehicleOnOpenRentalError,
     VehicleService,
     VehicleStationNotFoundError,
     VehicleTypeNotFoundError,
@@ -64,6 +65,11 @@ def update_vehicle(
             vehicle_type_id=body.vehicle_type_id,
             station_id=body.station_id,
         )
+    except VehicleOnOpenRentalError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Vehicle has an open rental",
+        ) from None
     except VehicleTypeNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -84,7 +90,13 @@ def delete_vehicle(
     vehicle_id: UUID,
     service: Annotated[VehicleService, Depends(get_vehicle_service)],
 ) -> Response:
-    deleted = service.delete(vehicle_id)
+    try:
+        deleted = service.delete(vehicle_id)
+    except VehicleOnOpenRentalError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Vehicle has an open rental",
+        ) from None
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

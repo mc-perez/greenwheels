@@ -84,3 +84,13 @@ The system SHALL reject a create or name update that would duplicate another veh
 - **AND** the operator renames `"Monopatín"` to `"Bici urbana"`
 - **THEN** the system rejects the rename
 - **AND** the vehicle type list still includes one `"Bici urbana"` and one `"Monopatín"`
+
+### Requirement: Current rate is per minute for rental billing
+
+The system SHALL treat `current_rate` as the price per minute of time out, copied at rental checkout into `rate_at_checkout`.
+
+#### Scenario: Checkout uses type rate as per-minute price
+
+- **WHEN** a vehicle type has current rate `150`
+- **AND** the operator checks out a parked vehicle of that type
+- **THEN** the open rental has `rate_at_checkout` `150`

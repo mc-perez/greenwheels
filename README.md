@@ -70,6 +70,13 @@ Fleet (parked vehicles):
 
 - `POST/GET/PATCH/DELETE` → `/api/v1/vehicles`
 
+Rentals:
+
+- `POST` → `/api/v1/rentals/checkout`
+- `POST` → `/api/v1/rentals/{id}/return`
+- `POST` → `/api/v1/rentals/{id}/record-payment`
+- `GET` → `/api/v1/rentals`, `/api/v1/rentals/{id}`
+
 ## Local tests without Docker (optional)
 
 Uses in-memory SQLite when `DATABASE_URL` is unset.
