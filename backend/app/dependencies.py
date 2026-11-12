@@ -4,27 +4,31 @@ from fastapi import Depends, Request
 from sqlmodel import Session
 
 from app.db import get_session
-from app.ports.fleet_usage import FleetUsagePort, StubFleetUsage
-from app.ports.station_fleet_usage import StationFleetUsagePort, StubStationFleetUsage
+from app.ports.fleet_usage import FleetUsagePort, SqlFleetUsage
+from app.ports.station_fleet_usage import SqlStationFleetUsage, StationFleetUsagePort
 from app.services.stations import StationService
 from app.services.vehicle_types import VehicleTypeService
-
-_stub_fleet_usage = StubFleetUsage()
-_stub_station_fleet_usage = StubStationFleetUsage()
+from app.services.vehicles import VehicleService
 
 
-def get_fleet_usage_port(request: Request) -> FleetUsagePort:
+def get_fleet_usage_port(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+) -> FleetUsagePort:
     override = request.app.state.fleet_usage_port
     if override is not None:
         return override
-    return _stub_fleet_usage
+    return SqlFleetUsage(session)
 
 
-def get_station_fleet_usage_port(request: Request) -> StationFleetUsagePort:
+def get_station_fleet_usage_port(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+) -> StationFleetUsagePort:
     override = request.app.state.station_fleet_usage_port
     if override is not None:
         return override
-    return _stub_station_fleet_usage
+    return SqlStationFleetUsage(session)
 
 
 def get_vehicle_type_service(
@@ -39,3 +43,9 @@ def get_station_service(
     station_fleet: Annotated[StationFleetUsagePort, Depends(get_station_fleet_usage_port)],
 ) -> StationService:
     return StationService(session, station_fleet)
+
+
+def get_vehicle_service(
+    session: Annotated[Session, Depends(get_session)],
+) -> VehicleService:
+    return VehicleService(session)

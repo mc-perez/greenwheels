@@ -62,6 +62,14 @@ Vehicle types catalog:
 
 - `POST/GET/PATCH/DELETE` → `/api/v1/vehicle-types`
 
+Stations network:
+
+- `POST/GET/PATCH/DELETE` → `/api/v1/stations`
+
+Fleet (parked vehicles):
+
+- `POST/GET/PATCH/DELETE` → `/api/v1/vehicles`
+
 ## Local tests without Docker (optional)
 
 Uses in-memory SQLite when `DATABASE_URL` is unset.

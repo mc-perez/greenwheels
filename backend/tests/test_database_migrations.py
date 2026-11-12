@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, create_engine
 
 from app.migrate import upgrade_head
 
-HEAD_REVISION = "0002_stations_and_unique_names"
+HEAD_REVISION = "0003_fleet_vehicle"
 
 
 @pytest.mark.skipif(
@@ -29,6 +29,11 @@ def test_fresh_database_gets_vehicle_type_table():
     assert inspector.has_table("station")
     station_columns = {c["name"] for c in inspector.get_columns("station")}
     assert station_columns == {"id", "name", "capacity", "latitude", "longitude"}
+    with eng.connect() as conn:
+        version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+    assert inspector.has_table("vehicle")
+    vehicle_columns = {c["name"] for c in inspector.get_columns("vehicle")}
+    assert vehicle_columns == {"id", "vehicle_type_id", "parked_station_id"}
     with eng.connect() as conn:
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
     assert version == HEAD_REVISION

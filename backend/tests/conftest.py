@@ -22,6 +22,7 @@ from app.main import (
     set_station_fleet_usage_port_for_tests,
 )
 from app.models.station import Station  # noqa: F401 — register metadata
+from app.models.vehicle import Vehicle  # noqa: F401 — register metadata
 from app.models.vehicle_type import VehicleType  # noqa: F401 — register metadata
 from app.ports.fleet_usage import FleetUsagePort, StubFleetUsage
 from app.ports.station_fleet_usage import StationFleetUsagePort
@@ -143,6 +144,20 @@ def create_station_via_api(
             "latitude": latitude,
             "longitude": longitude,
         },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def create_vehicle_via_api(
+    client: TestClient,
+    *,
+    vehicle_type_id: str,
+    station_id: str,
+) -> dict:
+    response = client.post(
+        "/api/v1/vehicles",
+        json={"vehicle_type_id": vehicle_type_id, "station_id": station_id},
     )
     assert response.status_code == 201
     return response.json()
