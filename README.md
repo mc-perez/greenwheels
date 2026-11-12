@@ -101,9 +101,67 @@ The UI loads `/api/v1/map/stations` **once** on open. Override the API URL with 
 - After seed: five markers, view fits all stations, panel shows capacity and all four types (some counts may be zero).
 - Network tab: exactly one map stations request on reload.
 
-## Local tests without Docker (optional)
+### Operator console
 
-Uses in-memory SQLite when `DATABASE_URL` is unset.
+Same app at **http://localhost:5173** — green top nav: **Map**, **Vehicle types**, **Stations**, **Fleet**, **Rentals**. All console actions call the existing REST API (`VITE_API_BASE_URL`, default `http://localhost:8000`).
+
+1. Start stack and seed once (see [Map workflow](#map-workflow)).
+2. Use nav links; no full-page navigation away from the app origin.
+
+**Manual UI checks (operator console):**
+
+| Scenario | Steps |
+|----------|--------|
+| Default map route | Open `/` — map loads; nav shows **Map** active. |
+| Add vehicle type | **Vehicle types** → name `Bici urbana`, rate `150` → **Add** → row appears. |
+| Delete type in use | After seed, delete a type used by a vehicle → red banner with API message; type remains. |
+| Add station | **Stations** → `Centro`, capacity `20`, lat `-37.32167`, lon `-59.13316` → **Add**. |
+| Station validation error | Submit coordinates outside Tandil urban area → banner shows API validation/detail; list unchanged. |
+| Add parked vehicle | **Fleet** → pick type and station → **Add vehicle**; row shows **Available** Yes. |
+| Checkout picker | **Rentals** → **Check out vehicle** → dropdown lists only parked (`available`) vehicles. |
+| Checkout success | Confirm checkout for a parked vehicle → new **Open** rental in table. |
+| Checkout conflict | Try checkout for a vehicle already **out** (not in picker if only parked are listed; or retry via API) → banner on conflict. |
+| Return rental | On an open rental → **Return** → choose station (full stations allowed) → **Closed** with amount. |
+| Record payment | On closed, unpaid rental → **Record payment** → **Paid** Yes. |
+
+The map tab does not auto-refresh after rentals; reload **Map** to see updated availability counts.
+
+## Tests
+
+| Layer | What runs | Command |
+|-------|-----------|---------|
+| **API** (official) | `pytest` on PostgreSQL (migrations + app) | `docker compose --profile test run --rm test` |
+| **API** (local fast) | `pytest` on in-memory SQLite | `cd backend` → venv → `pytest -q` |
+| **API** (local + Postgres) | `pytest` against Compose `db` on host port 5433 | Set `DATABASE_URL`, then `pytest -q` |
+| **Frontend** | Typecheck + production build, lint | `cd frontend` → `npm run build`, `npm run lint` |
+| **Map UI** | Manual checks only (no e2e in CI) | See [Map workflow](#map-workflow) above |
+| **Operator console UI** | Manual checks only | See [Operator console](#operator-console) above |
+| **Database** | Alembic + migration tests | Covered by API `pytest` (e.g. `test_database_migrations.py`) |
+
+All automated product behavior is tested in **`backend/tests/`** with pytest. The `test` Compose service uses the same image as `api` and runs `alembic upgrade head` before pytest.
+
+### Backend — Docker + PostgreSQL (recommended)
+
+From the repository root:
+
+```bash
+docker compose build api
+docker compose --profile test run --rm test
+```
+
+Target one file or test (still from repo root):
+
+```bash
+docker compose --profile test run --rm test sh -c "python -m alembic upgrade head && pytest -q tests/test_map_stations.py"
+
+docker compose --profile test run --rm test sh -c "python -m alembic upgrade head && pytest -q tests/test_map_stations.py::test_empty_network_returns_no_stations"
+```
+
+On Windows PowerShell the same `docker compose` lines apply.
+
+### Backend — local (without Docker for pytest)
+
+Uses in-memory SQLite when `DATABASE_URL` is unset (quick feedback; Postgres suite is the source of truth in CI).
 
 ```bash
 cd backend
@@ -126,7 +184,7 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
-To run the API locally against Postgres in Docker, set `DATABASE_URL` (for example in `backend/.env`):
+Against Postgres from `docker compose up -d db` (host port **5433**):
 
 ```text
 DATABASE_URL=postgresql+psycopg://greenwheels:greenwheels@localhost:5433/greenwheels
@@ -135,14 +193,46 @@ DATABASE_URL=postgresql+psycopg://greenwheels:greenwheels@localhost:5433/greenwh
 ```bash
 cd backend
 alembic upgrade head
-uvicorn app.main:app --reload
+pytest -q
 ```
 
-### Frontend (optional, without Docker)
+### Frontend
+
+No Playwright or e2e tests in v1. Verify compile and lint:
 
 ```bash
 cd frontend
-cp .env.example .env
+npm ci
+npm run build
+npm run lint
+```
+
+### Database smoke check (optional)
+
+Postgres health only (not an application test):
+
+```bash
+docker compose up -d db
+docker compose exec db pg_isready -U greenwheels -d greenwheels
+```
+
+## Local development (without Docker for the app)
+
+### API
+
+```bash
+cd backend
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+Use `DATABASE_URL` pointing at Compose Postgres when the DB runs in Docker (see [Tests](#tests)).
+
+### Frontend
+
+```bash
+cd frontend
+cp .env.example .env   # Windows: copy .env.example .env
 npm ci
 npm run dev
 ```
