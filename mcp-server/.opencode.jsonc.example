@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "greenwheels": {
+        "type": "local",
+        "command": [".venv/Scripts/python.exe", "-m", "greenwheels_mcp"],
+        "cwd": "mcp-server",
+        "environment": {
+          "GREENWHEELS_API_URL": "http://localhost:8000"
+        },
+        "codemode": false
+      }
+    }
+  }
+}

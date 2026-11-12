@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "greenwheels": {
+      "command": "c:\\code\\greenwheels\\mcp-server\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "greenwheels_mcp"],
+      "env": {
+        "GREENWHEELS_API_URL": "http://localhost:8000"
+      }
+    }
+  }
+}

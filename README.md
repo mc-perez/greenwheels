@@ -126,6 +126,68 @@ Same app at **http://localhost:5173** — green top nav: **Map**, **Vehicle type
 
 The map tab does not auto-refresh after rentals; reload **Map** to see updated availability counts.
 
+### MCP (Cursor & OpenCode)
+
+Local **stdio** MCP server in [`mcp-server/`](mcp-server/). It proxies the operator REST API (`GREENWHEELS_API_URL`, default `http://localhost:8000`). Start the API first: `docker compose up -d api db`.
+
+**Setup:**
+
+```powershell
+cd mcp-server
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+POSIX: use `.venv/bin/python` and `scripts/run-mcp.sh`.
+
+**MCP tools**
+
+| Phase | Tool | API |
+|-------|------|-----|
+| 1 | `health_check` | `GET /health` |
+| 1 | `get_map_stations` | `GET /api/v1/map/stations` |
+| 1 | `list_vehicle_types` | `GET /api/v1/vehicle-types` |
+| 1 | `list_stations` | `GET /api/v1/stations` |
+| 1 | `list_vehicles` | `GET /api/v1/vehicles` |
+| 1 | `list_rentals` | `GET /api/v1/rentals` |
+| 1 | `get_rental` | `GET /api/v1/rentals/{id}` |
+| 1 | `checkout_rental` | `POST /api/v1/rentals/checkout` |
+| 1 | `return_rental` | `POST /api/v1/rentals/{id}/return` |
+| 1 | `record_rental_payment` | `POST /api/v1/rentals/{id}/record-payment` |
+| 2 | `create_vehicle_type`, `update_vehicle_type`, `delete_vehicle_type` | `/api/v1/vehicle-types` |
+| 2 | `create_station`, `update_station`, `delete_station` | `/api/v1/stations` |
+| 2 | `create_vehicle`, `update_vehicle`, `delete_vehicle` | `/api/v1/vehicles` |
+| 2 | `seed_network` | `POST /api/v1/seed` (409 if network already exists) |
+
+Tool failures surface API `detail` text (no stack traces).
+
+**Cursor** (`mcpServers`):
+
+```json
+{
+  "mcpServers": {
+    "greenwheels": {
+      "command": "c:\\code\\greenwheels\\mcp-server\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "greenwheels_mcp"],
+      "env": {
+        "GREENWHEELS_API_URL": "http://localhost:8000"
+      }
+    }
+  }
+}
+```
+
+**OpenCode:** copy [`mcp-server/.opencode.jsonc.example`](mcp-server/.opencode.jsonc.example) into project `opencode.jsonc` (adjust `command` to `.venv/bin/python` on Linux/macOS). Or:
+
+```bash
+opencode mcp add greenwheels --env GREENWHEELS_API_URL=http://localhost:8000 -- mcp-server/.venv/Scripts/python.exe -m greenwheels_mcp
+```
+
+Use `codemode: false` in config for direct tool calls. Verify: `opencode mcp list` with API running; invoke `list_stations` after seed.
+
+**MCP tests:** `cd mcp-server` → `pytest -q` (HTTP mocked with respx).
+
 ## Tests
 
 | Layer | What runs | Command |
@@ -136,6 +198,7 @@ The map tab does not auto-refresh after rentals; reload **Map** to see updated a
 | **Frontend** | Typecheck + production build, lint | `cd frontend` → `npm run build`, `npm run lint` |
 | **Map UI** | Manual checks only (no e2e in CI) | See [Map workflow](#map-workflow) above |
 | **Operator console UI** | Manual checks only | See [Operator console](#operator-console) above |
+| **MCP** | `pytest` in `mcp-server/` (respx) | `cd mcp-server` → `pytest -q`; hosts: manual `opencode mcp list` / Cursor MCP |
 | **Database** | Alembic + migration tests | Covered by API `pytest` (e.g. `test_database_migrations.py`) |
 
 All automated product behavior is tested in **`backend/tests/`** with pytest. The `test` Compose service uses the same image as `api` and runs `alembic upgrade head` before pytest.
