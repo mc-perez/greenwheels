@@ -8,22 +8,84 @@ Local vehicle-rental system for one city (learning project). See [requirements.m
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose (Docker Desktop on Windows/macOS includes Compose).
 
-## Docker (recommended)
+## Getting started (Docker)
 
-From the repository root:
+Run everything from the **repository root** (`greenwheels/`).
+
+### 1. Build images (first time, or after Dockerfile changes)
 
 ```bash
-# Build images (api is shared by api and test services)
 docker compose build api
 docker compose build frontend
+docker compose build mcp
+```
 
-# Start database, API, and map UI
+`api` is reused by the `test` service. `mcp` is only needed for AI agents (optional until you use MCP).
+
+### 2. Start the stack
+
+```bash
 docker compose up -d
+```
 
-# Run tests against PostgreSQL
+This starts **PostgreSQL**, **API** (migrations then Uvicorn), and **frontend** (map and operator console).
+
+| Service | URL / port |
+|---------|----------------|
+| Station map (UI) | http://localhost:5173 |
+| API | http://localhost:8000 |
+| OpenAPI docs | http://localhost:8000/docs |
+| Health | http://localhost:8000/health |
+| PostgreSQL (from the host) | `localhost:5433` (user `greenwheels`, password `greenwheels`, db `greenwheels`) |
+
+Containers use `db:5432` inside the network; the host maps **5433** so a local Postgres on 5432 does not clash.
+
+### 3. Confirm the API
+
+```bash
+curl http://localhost:8000/health
+```
+
+### 4. Seed demo data (once per empty database)
+
+```bash
+curl -X POST http://localhost:8000/api/v1/seed
+```
+
+Or use Swagger at http://localhost:8000/docs → `POST /api/v1/seed`. Returns **409** if the network already exists.
+
+### 5. Use the app
+
+Open http://localhost:5173 — map, catalogs, and rentals (see [Operator console](#operator-console)).
+
+### 6. Connect an AI agent (MCP)
+
+The API must stay running (`docker compose up -d api db` is enough; frontend optional).
+
+- **Full MCP setup (Cursor, OpenCode, Docker vs venv):** [mcp-server/README.md](mcp-server/README.md)
+- **Quick Docker MCP test:** `docker compose --profile mcp run --rm -i mcp` (stdio; Ctrl+C to stop)
+
+### Stop and reset
+
+```bash
+docker compose down          # stop containers
+docker compose down -v       # also wipe Postgres volume (fresh DB)
+```
+
+### Run automated tests
+
+```bash
+docker compose --profile test run --rm test      # API (PostgreSQL)
+docker compose --profile test-mcp run --rm test-mcp   # MCP unit tests
+```
+
+## Docker reference
+
+Same commands as above, collected for day-to-day use:
+
+```bash
+docker compose up -d
 docker compose --profile test run --rm test
-
-# Stop services
 docker compose down
 ```
 
@@ -126,22 +188,23 @@ Same app at **http://localhost:5173** — green top nav: **Map**, **Vehicle type
 
 The map tab does not auto-refresh after rentals; reload **Map** to see updated availability counts.
 
-### MCP (Cursor & OpenCode)
+### MCP (Cursor, OpenCode, and other agents)
 
-Local **stdio** MCP server in [`mcp-server/`](mcp-server/). It proxies the operator REST API (`GREENWHEELS_API_URL`, default `http://localhost:8000`). Start the API first: `docker compose up -d api db`.
+Stdio MCP in [`mcp-server/`](mcp-server/) — proxies the same REST API as the operator console. **Canonical setup guide:** [mcp-server/README.md](mcp-server/README.md) (Docker vs venv, Cursor, OpenCode, troubleshooting).
 
-**Setup:**
+**Checklist:**
 
-```powershell
-cd mcp-server
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-```
+1. `docker compose up -d api db` (and `docker compose build mcp` once).
+2. Seed if you need data: `curl -X POST http://localhost:8000/api/v1/seed`.
+3. Configure your agent (examples: [`.cursor/mcp.json.docker.example`](.cursor/mcp.json.docker.example), [`mcp-server/.opencode.jsonc.example`](mcp-server/.opencode.jsonc.example) → copy to repo-root `opencode.jsonc`).
+4. The agent **starts** MCP (you do not run `docker compose up mcp`). Manual smoke test: `docker compose --profile mcp run --rm -i mcp`.
 
-POSIX: use `.venv/bin/python` and `scripts/run-mcp.sh`.
+| Mode | `GREENWHEELS_API_URL` | Who starts the process |
+|------|------------------------|-------------------------|
+| Docker | `http://api:8000` in compose | Agent runs `docker compose ... run -i mcp` |
+| Host venv | `http://localhost:8000` in env | Agent runs venv `python -m greenwheels_mcp` |
 
-**MCP tools**
+### MCP tools
 
 | Phase | Tool | API |
 |-------|------|-----|
@@ -160,33 +223,9 @@ POSIX: use `.venv/bin/python` and `scripts/run-mcp.sh`.
 | 2 | `create_vehicle`, `update_vehicle`, `delete_vehicle` | `/api/v1/vehicles` |
 | 2 | `seed_network` | `POST /api/v1/seed` (409 if network already exists) |
 
-Tool failures surface API `detail` text (no stack traces).
+Tool failures surface API `detail` text (no stack traces). Verify connection: `opencode mcp list` or Cursor MCP panel; call `health_check` or `list_stations`.
 
-**Cursor** (`mcpServers`):
-
-```json
-{
-  "mcpServers": {
-    "greenwheels": {
-      "command": "c:\\code\\greenwheels\\mcp-server\\.venv\\Scripts\\python.exe",
-      "args": ["-m", "greenwheels_mcp"],
-      "env": {
-        "GREENWHEELS_API_URL": "http://localhost:8000"
-      }
-    }
-  }
-}
-```
-
-**OpenCode:** copy [`mcp-server/.opencode.jsonc.example`](mcp-server/.opencode.jsonc.example) into project `opencode.jsonc` (adjust `command` to `.venv/bin/python` on Linux/macOS). Or:
-
-```bash
-opencode mcp add greenwheels --env GREENWHEELS_API_URL=http://localhost:8000 -- mcp-server/.venv/Scripts/python.exe -m greenwheels_mcp
-```
-
-Use `codemode: false` in config for direct tool calls. Verify: `opencode mcp list` with API running; invoke `list_stations` after seed.
-
-**MCP tests:** `cd mcp-server` → `pytest -q` (HTTP mocked with respx).
+**MCP tests:** `docker compose --profile test-mcp run --rm test-mcp` (recommended), or `cd mcp-server` → `pytest -q` (HTTP mocked with respx).
 
 ## Tests
 
@@ -198,7 +237,7 @@ Use `codemode: false` in config for direct tool calls. Verify: `opencode mcp lis
 | **Frontend** | Typecheck + production build, lint | `cd frontend` → `npm run build`, `npm run lint` |
 | **Map UI** | Manual checks only (no e2e in CI) | See [Map workflow](#map-workflow) above |
 | **Operator console UI** | Manual checks only | See [Operator console](#operator-console) above |
-| **MCP** | `pytest` in `mcp-server/` (respx) | `cd mcp-server` → `pytest -q`; hosts: manual `opencode mcp list` / Cursor MCP |
+| **MCP** | `pytest` in `mcp-server/` (respx) | `docker compose --profile test-mcp run --rm test-mcp`; or `cd mcp-server` → `pytest -q`; hosts: manual `opencode mcp list` / Cursor MCP |
 | **Database** | Alembic + migration tests | Covered by API `pytest` (e.g. `test_database_migrations.py`) |
 
 All automated product behavior is tested in **`backend/tests/`** with pytest. The `test` Compose service uses the same image as `api` and runs `alembic upgrade head` before pytest.

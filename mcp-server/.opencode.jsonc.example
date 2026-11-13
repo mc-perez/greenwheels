@@ -10,6 +10,23 @@
           "GREENWHEELS_API_URL": "http://localhost:8000"
         },
         "codemode": false
+      },
+      "greenwheels-docker": {
+        "type": "local",
+        "command": [
+          "docker",
+          "compose",
+          "-f",
+          "docker-compose.yml",
+          "--profile",
+          "mcp",
+          "run",
+          "--rm",
+          "-i",
+          "mcp"
+        ],
+        "cwd": "c:\\code\\greenwheels",
+        "codemode": false
       }
     }
   }

@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "greenwheels": {
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "c:\\code\\greenwheels\\docker-compose.yml",
+        "--profile",
+        "mcp",
+        "run",
+        "--rm",
+        "-i",
+        "mcp"
+      ]
+    }
+  }
+}

@@ -26,6 +26,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:8000/health'')"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
 
   frontend:
     build:
@@ -47,6 +57,26 @@ services:
     command: ["sh", "-c", "python -m alembic upgrade head && pytest -q"]
     profiles:
       - test
+
+  mcp:
+    build:
+      context: ./mcp-server
+    image: greenwheels-mcp
+    stdin_open: true
+    tty: false
+    environment:
+      GREENWHEELS_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles:
+      - mcp
+
+  test-mcp:
+    image: greenwheels-mcp
+    command: ["pytest", "-q"]
+    profiles:
+      - test-mcp
 
 volumes:
   pgdata:
